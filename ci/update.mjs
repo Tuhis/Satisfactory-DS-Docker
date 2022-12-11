@@ -6,8 +6,8 @@ const dockerToken = process.env.DOCKER_TOKEN;
 const githubToken = process.env.GH_TOKEN;
 const forceUpdate = process.env.FORCE_UPDATE;
 const depotName = process.env.DEPOT_NAME || 'public';
-const imageName = 'yfricke/satisfactory-server';
-const ghcrImageName = 'ghcr.io/yannickfricke/satisfactory-ds-docker';
+const imageName = 'tuhis/satisfactory-server';
+// const ghcrImageName = 'ghcr.io/yannickfricke/satisfactory-ds-docker';
 
 function setup() {
     if (!dockerToken) {
@@ -22,7 +22,7 @@ function setup() {
         throw new Error('PREVIOUS_TAG environment variable is not set');
     }
 
-    const dockerLoginResult = execa.sync('docker', ['login', '-u', `yfricke`, '-p', dockerToken], {
+    const dockerLoginResult = execa.sync('docker', ['login', '-u', `tuhis`, '-p', dockerToken], {
         all: true,
         stdio: 'inherit'
     });
@@ -31,17 +31,17 @@ function setup() {
         throw new Error(`Failed to login to Docker hub: ${dockerLoginResult.all}`);
     }
 
-    const githubLoginResult = execa.sync('docker', ['login', 'ghcr.io', '-u', `yannickfricke`, '-p', githubToken], {
-        all: true,
-        stdio: 'inherit'
-    });
+    // const githubLoginResult = execa.sync('docker', ['login', 'ghcr.io', '-u', `yannickfricke`, '-p', githubToken], {
+    //     all: true,
+    //     stdio: 'inherit'
+    // });
 
-    if (githubLoginResult.failed) {
-        throw new Error(`Failed to login to GitHub container registry: ${githubLoginResult.all}`);
-    }
+    // if (githubLoginResult.failed) {
+    //     throw new Error(`Failed to login to GitHub container registry: ${githubLoginResult.all}`);
+    // }
 
-    execa.sync('git', ['config', '--global', 'user.email', 'yannickfricke@googlemail.com']);
-    execa.sync('git', ['config', '--global', 'user.name', 'YannickFricke']);
+    execa.sync('git', ['config', '--global', 'user.email', 'juho@tuhismedia.fi']);
+    execa.sync('git', ['config', '--global', 'user.name', 'JuhoKuusisto']);
 }
 
 function buildImage() {
@@ -60,23 +60,23 @@ function buildImage() {
 }
 
 function createTags(latestBuildId) {
-    const ghcrLatestTagResult = execa.sync('docker', ['image', 'tag', `${imageName}:latest`, `${ghcrImageName}:latest`], {
-        all: true,
-        stdio: 'inherit'
-    });
+    // const ghcrLatestTagResult = execa.sync('docker', ['image', 'tag', `${imageName}:latest`, `${ghcrImageName}:latest`], {
+    //     all: true,
+    //     stdio: 'inherit'
+    // });
 
-    if (ghcrLatestTagResult.failed) {
-        throw new Error(`Failed to tag docker image: ${ghcrLatestTagResult.all}`);
-    }
+    // if (ghcrLatestTagResult.failed) {
+    //     throw new Error(`Failed to tag docker image: ${ghcrLatestTagResult.all}`);
+    // }
 
-    const ghcrLatestBuildTagResult = execa.sync('docker', ['image', 'tag', `${imageName}:latest`, `${ghcrImageName}:${latestBuildId}`], {
-        all: true,
-        stdio: 'inherit'
-    });
+    // const ghcrLatestBuildTagResult = execa.sync('docker', ['image', 'tag', `${imageName}:latest`, `${ghcrImageName}:${latestBuildId}`], {
+    //     all: true,
+    //     stdio: 'inherit'
+    // });
 
-    if (ghcrLatestBuildTagResult.failed) {
-        throw new Error(`Failed to tag docker image: ${ghcrLatestBuildTagResult.all}`);
-    }
+    // if (ghcrLatestBuildTagResult.failed) {
+    //     throw new Error(`Failed to tag docker image: ${ghcrLatestBuildTagResult.all}`);
+    // }
 
     const dockerTagResult = execa.sync('docker', ['image', 'tag', `${imageName}:latest`, `${imageName}:${latestBuildId}`], {
         all: true,
@@ -109,14 +109,14 @@ function push() {
         throw new Error(`Failed to push docker image: ${dockerPushResult.all}`);
     }
 
-    const githubPushResult = execa.sync('docker', ['image', 'push', '--all-tags', ghcrImageName], {
-        all: true,
-        stdio: 'inherit'
-    });
+    // const githubPushResult = execa.sync('docker', ['image', 'push', '--all-tags', ghcrImageName], {
+    //     all: true,
+    //     stdio: 'inherit'
+    // });
 
-    if (githubPushResult.failed) {
-        throw new Error(`Failed to push docker image: ${githubPushResult.all}`);
-    }
+    // if (githubPushResult.failed) {
+    //     throw new Error(`Failed to push docker image: ${githubPushResult.all}`);
+    // }
 
     if (forceUpdate === undefined) {
         const gitPushResult = execa.sync('git', ['push', 'origin', '--tags'], {
