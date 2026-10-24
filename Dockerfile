@@ -31,6 +31,10 @@ WORKDIR /home/steam/Steam
 # Download SteamCMD and extract it
 RUN curl -sqL "https://steamcdn-a.akamaihd.net/client/installer/steamcmd_linux.tar.gz" | tar zxvf -
 
+# Log in once so SteamCMD finishes self-updating and fetches the client config.
+# Installing on a fresh SteamCMD otherwise fails with "Missing configuration".
+RUN /home/steam/Steam/steamcmd.sh +login anonymous +quit
+
 # Install the Satisfactory dedicated server
 RUN /home/steam/Steam/steamcmd.sh +force_install_dir SatisfactoryDedicatedServer +login anonymous +app_update 1690800 +quit
 
