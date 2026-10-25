@@ -2,6 +2,11 @@ name: Update check
 
 on:
     workflow_dispatch:
+        inputs:
+            force:
+                description: 'Rebuild and push the image even if the Steam build has not changed (e.g. after a Dockerfile change). Overwrites the existing build ID tag.'
+                type: boolean
+                default: false
     schedule:
         - cron: '0 * * * *'
 
@@ -29,6 +34,8 @@ jobs:
                   PREVIOUS_TAG: '${{ steps.previoustag.outputs.tag }}'
                   DOCKER_TOKEN: ${{secrets.DOCKER_TOKEN}}
                   GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+                  # 'true' only for a manual run with "force" ticked; empty on schedule
+                  FORCE_UPDATE: ${{ inputs.force && 'true' || '' }}
               run: |
                   npm install
                   node ./ci/update.mjs

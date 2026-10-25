@@ -4,7 +4,9 @@ import fetch from 'node-fetch';
 const previousPublishedBuild = process.env.PREVIOUS_TAG;
 const dockerToken = process.env.DOCKER_TOKEN;
 const githubToken = process.env.GH_TOKEN;
-const forceUpdate = process.env.FORCE_UPDATE;
+// Only the exact string 'true' forces a rebuild. The workflow always sets
+// FORCE_UPDATE, so an empty value must not count.
+const forceUpdate = process.env.FORCE_UPDATE === 'true';
 const depotName = process.env.DEPOT_NAME || 'public';
 const imageName = 'tuhis/satisfactory-server';
 // const ghcrImageName = 'ghcr.io/yannickfricke/satisfactory-ds-docker';
@@ -87,7 +89,7 @@ function createTags(latestBuildId) {
         throw new Error(`Failed to tag docker image: ${dockerTagResult.all}`);
     }
 
-    if (forceUpdate === undefined) {
+    if (!forceUpdate) {
         const gitTagResult = execa.sync('git', ['tag', `-a`, latestBuildId, '-m', `"Updated to build version ${latestBuildId}"`], {
             all: true,
             stdio: 'inherit'
@@ -118,7 +120,7 @@ function push() {
     //     throw new Error(`Failed to push docker image: ${githubPushResult.all}`);
     // }
 
-    if (forceUpdate === undefined) {
+    if (!forceUpdate) {
         const gitPushResult = execa.sync('git', ['push', 'origin', '--tags'], {
             all: true,
             stdio: 'inherit'
@@ -135,12 +137,16 @@ async function checkForUpdates() {
         setup();
         const latestBuildId = await getLatestBuildId();
 
-        if (previousPublishedBuild === latestBuildId && forceUpdate === undefined) {
+        if (previousPublishedBuild === latestBuildId && !forceUpdate) {
             console.log('No updates available');
             return;
         }
 
-        console.log(`New build available: ${latestBuildId}`);
+        if (previousPublishedBuild === latestBuildId) {
+            console.log(`Forced rebuild of build ${latestBuildId}`);
+        } else {
+            console.log(`New build available: ${latestBuildId}`);
+        }
 
         buildImage();
         createTags(latestBuildId);
