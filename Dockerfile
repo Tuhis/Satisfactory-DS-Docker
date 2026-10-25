@@ -9,8 +9,8 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y curl software-pro
 # Add support for the 32bit architecture
 RUN add-apt-repository multiverse && dpkg --add-architecture i386
 
-# Install required SteamCMD dependencies
-RUN apt-get update && apt-get upgrade -y && apt-get install -y lib32gcc1 && rm -rf /var/lib/apt/lists/*
+# Install required SteamCMD dependencies, plus tini as the init process
+RUN apt-get update && apt-get upgrade -y && apt-get install -y lib32gcc1 tini && rm -rf /var/lib/apt/lists/*
 
 # Add an unprivileged user
 # Running things in Docker as root is a security risk and should be avoided
@@ -38,8 +38,13 @@ RUN /home/steam/Steam/steamcmd.sh +login anonymous +quit
 # Install the Satisfactory dedicated server
 RUN /home/steam/Steam/steamcmd.sh +force_install_dir SatisfactoryDedicatedServer +login anonymous +app_update 1690800 +quit
 
-# Set the entrypoint to the dedicated server start script
-ENTRYPOINT [ "/home/steam/Steam/SatisfactoryDedicatedServer/FactoryServer.sh" ]
+# Run the server binary directly under tini instead of FactoryServer.sh.
+# The script starts the server without exec, so /bin/sh became PID 1 and
+# silently ignored SIGTERM: "docker stop" waited out its timeout and then
+# SIGKILLed the server. tini forwards signals and reaps child processes
+# such as crashpad_handler. The server doesn't save on SIGTERM, so save
+# through the server API (SaveGame) before stopping.
+ENTRYPOINT [ "/usr/bin/tini", "--", "/home/steam/Steam/SatisfactoryDedicatedServer/Engine/Binaries/Linux/FactoryServer-Linux-Shipping", "FactoryGame" ]
 
 # for documentation purposes
 EXPOSE 15777/udp
